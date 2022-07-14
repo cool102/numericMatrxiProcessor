@@ -1,0 +1,282 @@
+type: edu
+custom_name: stage2
+files:
+- name: src/processor/Main.java
+  visible: true
+  text: |
+    package processor;
+
+    public class Main {
+        public static void main(String[] args) {
+            System.out.println("Hello World!");
+        }
+    }
+  learner_created: false
+- name: test/NumericMatrixProcessorTest.java
+  visible: false
+  text: |
+    import org.hyperskill.hstest.stage.StageTest;
+    import org.hyperskill.hstest.testcase.CheckResult;
+    import org.hyperskill.hstest.testcase.SimpleTestCase;
+    import org.hyperskill.hstest.testcase.TestCase;
+
+    import java.util.List;
+    import java.util.stream.Collectors;
+
+    public class NumericMatrixProcessorTest extends StageTest {
+
+        @Override
+        public List<TestCase> generate() {
+            return List.of(
+                new SimpleTestCase(
+                    "3 3\n" +
+                        "1 2 3\n" +
+                        "4 5 6\n" +
+                        "7 8 9\n" +
+                        "3",
+                    "3 6 9\n" +
+                        "12 15 18\n" +
+                        "21 24 27"
+                ).setCheckFunc(this::checkSolved),
+
+                new SimpleTestCase(
+                    "2 3\n" +
+                        "1 2 3\n" +
+                        "4 5 6\n" +
+                        "0",
+                    "0 0 0\n" +
+                        "0 0 0"
+                ).setCheckFunc(this::checkSolved),
+
+                new SimpleTestCase(
+                    "5 5\n" +
+                        "1 4 6 7 8\n" +
+                        "1 9 5 2 2\n" +
+                        "1 4 3 5 7\n" +
+                        "1 4 6 4 1\n" +
+                        "1 4 5 7 1\n" +
+                        "5",
+                    "5 20 30 35 40\n" +
+                        "5 45 25 10 10\n" +
+                        "5 20 15 25 35\n" +
+                        "5 20 30 20 5\n" +
+                        "5 20 25 35 5"
+                ).setCheckFunc(this::checkSolved),
+
+                new SimpleTestCase(
+                    "1 1\n" +
+                        "1\n" +
+                        "1",
+                    "1"
+                ).setCheckFunc(this::checkSolved),
+
+                new SimpleTestCase(
+                    "1 1\n" +
+                        "0\n" +
+                        "1",
+                    "0"
+                ).setCheckFunc(this::checkSolved),
+
+                new SimpleTestCase(
+                    "3 2\n" +
+                        "1 2\n" +
+                        "8 1\n" +
+                        "9 1\n" +
+                        "10",
+                    "10 20\n" +
+                        "80 10\n" +
+                        "90 10"
+                ).setCheckFunc(this::checkSolved)
+            );
+        }
+
+        private CheckResult checkSolved(String reply, String clue) {
+
+            clue = clue.strip();
+            reply = reply.strip();
+
+            if (reply.equals(clue)) {
+                return CheckResult.correct();
+            }
+
+            if (clue.equals("ERROR")) {
+                return CheckResult.wrong("");
+            }
+
+            List<String> user = reply.lines().collect(Collectors.toList());
+            List<String> answ = clue.lines().collect(Collectors.toList());
+
+            if (user.size() != answ.size()) {
+                return CheckResult.wrong("");
+            }
+
+            for (int i = 0; i < user.size(); i++) {
+                String userLine = user.get(i).strip();
+                String answLine = answ.get(i).strip();
+                if (!userLine.equals(answLine)) {
+                    return CheckResult.wrong("");
+                }
+            }
+
+            return new CheckResult(true);
+        }
+    }
+  learner_created: false
+- name: src/processor/Determinant.java
+  visible: true
+  text: |-
+    package processor;
+
+    public class Determinant {
+        private static int N;
+        double[][] matrix;
+
+        public Determinant(int n, double[][] matrix) {
+            N = n;
+            this.matrix = matrix;
+        }
+
+
+        public static void getCofactor(double[][] mat, double[][] temp, double p, double q, int n) {
+            int i = 0, j = 0;
+            for (int row = 0; row < n; row++) {
+                for (int col = 0; col < n; col++) {
+                    if (row != p && col != q) {
+                        temp[i][j++] = mat[row][col];
+                        if (j == n - 1) {
+                            j = 0;
+                            i++;
+                        }
+                    }
+                }
+
+            }
+        }
+
+        public static double determinantOfMatrix(double[][] mat, int n) {
+            double D = 0; // Initialize result
+
+            if (n == 1) {
+                return mat[0][0];
+            }
+            double[][] temp = new double[N][N];
+            double sign = 1;
+            for (int f = 0; f < n; f++) {
+                getCofactor(mat, temp, 0, f, n);
+
+                D += sign * mat[0][f] * determinantOfMatrix(temp, n - 1);
+                sign = -sign;
+            }
+
+
+            return D;
+        }
+
+        public double[][] adj(double[][] A, double[][] adj) {
+            if (N == 1) {
+                adj[0][0] = 1;
+            } else {
+                double sign;
+                double[][] temp = new double[N][N];
+
+                for (int i = 0; i < N; i++) {
+                    for (int j = 0; j < N; j++) {
+                        getCofactor(A, temp, i, j, N);
+
+                        sign = ((i + j) % 2 == 0) ? 1 : -1;
+
+                        adj[j][i] = (sign) * (determinantOfMatrix(temp, N - 1));
+                    }
+                }
+            }
+            return adj;
+        }
+
+
+        public double getDeterminant() {
+            return determinantOfMatrix(matrix, N);
+        }
+
+        public void display() {
+            System.out.println("The result is: ");
+            System.out.println(determinantOfMatrix(matrix, N));
+        }
+
+    }
+  learner_created: true
+- name: src/processor/InputReader.java
+  visible: true
+  text: |
+    package processor;
+
+    import java.util.Scanner;
+
+    public class InputReader {
+        static Scanner sc = new Scanner(System.in);
+        static String[] split;
+
+        public static int[][] readMatrix() {
+
+            while (true) {
+                split = sc.nextLine().split("\\s+");
+                if (!sc.hasNextLine()) {
+                    break;
+                }
+            }
+
+            int rows = Integer.parseInt(split[0]);
+            int columns = Integer.parseInt(split[1]);
+            int[][] twoDimArray = new int[rows][columns];
+
+            for (int i = 0; i < twoDimArray.length; i++) {
+                for (int j = 0; j < twoDimArray[i].length; j++) {
+                    twoDimArray[i][j] = Integer.parseInt(sc.next());
+                    if (!sc.hasNextLine()) {
+                        break;
+                    }
+                }
+            }
+
+            return twoDimArray;
+        }
+
+        public static void print2Darray(int[][] arr) {
+
+
+            for (int i = 0; i < arr.length; i++) {
+                for (int j = 0; j < arr[i].length; j++) {
+                    System.out.print(arr[i][j] + " ");
+                }
+                System.out.println();
+            }
+
+
+        }
+
+
+    }
+  learner_created: true
+- name: src/processor/MatrixProcessor.java
+  visible: true
+  text: |
+    package processor;
+
+    public class MatrixProcessor {
+
+        public static boolean isSameDemension(int[][] matrix1, int[][] matrix2) {
+            boolean lengthsAreSame = matrix1.length == matrix2.length;
+            if (lengthsAreSame) {
+
+                return matrix1[0].length ==matrix2[0].length;
+            }
+            System.out.println("ERROR");
+            return false;
+        }
+    }
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/60/stages/324/implement#comment
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Thu, 14 Jul 2022 13:18:53 UTC
+record: 2
